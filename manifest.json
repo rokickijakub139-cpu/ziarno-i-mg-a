@@ -1,0 +1,17 @@
+{
+  "name": "Ziarno i Mgła",
+  "short_name": "ZiarnoMgła",
+  "description": "Pikselowa gra strategiczna turowa — podbij mapę, karm swój lud, buduj mury.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#141a1f",
+  "theme_color": "#141a1f",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ziarno i Mgła</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#141a1f">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#141a1f; --panel:#1c242b; --panel-2:#232d35; --line:#3a4750;
+    --ink:#e7ecef; --ink-dim:#93a2ab;
+    --amber:#e3a640; --amber-dim:#8a6a2f;
+    --river:#2a72b8; --wall:#9a9488;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Courier New', Courier, monospace; font-size:19px;
+    padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    min-height:100%; padding:14px;
+  }
+  h1{ font-family:'Courier New', Courier, monospace; font-weight:bold; font-size:15px; color:var(--amber); margin:6px 0 0 0; text-align:center; letter-spacing:1px; }
+  .subtitle{ color:var(--ink-dim); font-size:16px; margin-top:-6px; text-align:center; }
+  .wrap{ display:flex; gap:14px; flex-wrap:wrap; justify-content:center; align-items:flex-start; width:100%; max-width:1050px; }
+  canvas{ image-rendering:pixelated; image-rendering:crisp-edges; border:3px solid var(--line); background:#0d1116; border-radius:4px; max-width:100%; height:auto; touch-action:manipulation; }
+  .panel{ background:var(--panel); border:3px solid var(--line); border-radius:4px; padding:12px 14px; width:280px; display:flex; flex-direction:column; gap:9px; }
+  .panel h2{ font-family:'Courier New', Courier, monospace; font-weight:bold; font-size:11px; color:var(--amber); margin:0 0 2px 0; }
+  .stat-row{ display:flex; justify-content:space-between; font-size:19px; }
+  .stat-row b{ color:var(--ink); }
+  .stat-row span.val{ color:var(--amber); }
+  hr{ border:none; border-top:1px solid var(--line); margin:2px 0; }
+  .btn{ font-family:'Courier New', Courier, monospace; font-size:18px; cursor:pointer; background:var(--panel-2); color:var(--ink); border:2px solid var(--line); border-radius:3px; padding:7px 10px; text-align:center; user-select:none; }
+  .btn:hover{ border-color:var(--amber); color:var(--amber); }
+  .btn.primary{ background:var(--amber-dim); border-color:var(--amber); color:#1c1400; font-weight:bold; }
+  .btn.primary:hover{ filter:brightness(1.1); color:#1c1400; }
+  .btn.active{ border-color:var(--amber); color:var(--amber); box-shadow:0 0 0 1px var(--amber) inset; }
+  .row2{ display:flex; gap:8px; }
+  .row2 .btn{ flex:1; }
+  .slider-row{ display:flex; flex-direction:column; gap:4px; }
+  input[type=range]{ width:100%; accent-color:var(--amber); }
+  .split-labels{ display:flex; justify-content:space-between; font-size:15px; color:var(--ink-dim); }
+  #log{ background:#0d1116; border:1px solid var(--line); border-radius:3px; height:110px; overflow-y:auto; padding:6px 8px; font-size:14px; line-height:1.35; }
+  #log div{ margin-bottom:2px; }
+  .legend{ display:flex; flex-wrap:wrap; gap:6px 10px; font-size:13px; color:var(--ink-dim); }
+  .legend span{ display:flex; align-items:center; gap:4px; }
+  .swatch{ width:10px; height:10px; display:inline-block; border:1px solid #000a; }
+  .hint{ font-size:13px; color:var(--ink-dim); }
+  #overlay,#startScreen,#banner,#profileOverlay{ position:fixed; inset:0; background:#000c; display:none; align-items:center; justify-content:center; z-index:50; padding:14px; overflow-y:auto; }
+  #overlay.show,#startScreen.show,#banner.show,#profileOverlay.show{ display:flex; }
+  #modal{ background:var(--panel); border:3px solid var(--amber); border-radius:4px; padding:18px; width:280px; display:flex; flex-direction:column; gap:10px; }
+  #modal h3{ font-family:'Courier New', Courier, monospace; font-weight:bold; font-size:12px; color:var(--amber); margin:0; }
+  #modalDesc{ font-size:16px; color:var(--ink-dim); }
+  #modalCount{ text-align:center; font-size:26px; color:var(--amber); }
+  .modal-btns{ display:flex; gap:8px; }
+  .modal-btns .btn{ flex:1; }
+  #bannerBox,#startBox,#profileBox{ background:var(--panel); border:3px solid var(--amber); border-radius:4px; padding:22px 24px; text-align:center; display:flex; flex-direction:column; gap:12px; max-width:380px; margin:auto; }
+  #bannerBox h2,#startBox h2,#profileBox h2{ font-family:'Courier New', Courier, monospace; font-weight:bold; font-size:15px; color:var(--amber); margin:0; }
+  .small-hint{ font-size:14px; color:var(--ink-dim); text-align:center; }
+  #startBox ul{ text-align:left; font-size:14px; color:var(--ink-dim); margin:0; padding-left:18px; line-height:1.5; }
+  #startBox ul b{ color:var(--ink); }
+  .xpwrap{ text-align:left; }
+  .xpbar{ background:#0d1116; border:2px solid var(--line); border-radius:3px; height:14px; overflow:hidden; margin-top:3px; }
+  .xpbar-fill{ background:var(--amber); height:100%; }
+  .xplabel{ font-size:13px; color:var(--ink-dim); display:flex; justify-content:space-between; margin-top:2px; }
+  .profile-section{ text-align:left; }
+  .profile-section h3{ font-family:'Courier New', Courier, monospace; font-weight:bold; font-size:11px; color:var(--amber); margin:10px 0 6px; }
+  .statgrid{ display:grid; grid-template-columns:1fr 1fr; gap:4px 10px; font-size:14px; }
+  .badgegrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .badge{ background:#0d1116; border:2px solid var(--line); border-radius:3px; padding:6px 4px; font-size:11px; text-align:center; line-height:1.3; }
+  .badge.earned{ border-color:var(--amber); color:var(--amber); }
+  .badge.locked{ opacity:.45; }
+  .skinrow{ display:flex; gap:8px; flex-wrap:wrap; }
+  .skin{ width:34px; height:34px; border-radius:4px; border:2px solid var(--line); cursor:pointer; position:relative; }
+  .skin.selected{ border-color:#fff; box-shadow:0 0 0 2px var(--amber); }
+  .skin.locked{ opacity:.35; cursor:not-allowed; }
+  .skin span{ position:absolute; bottom:-16px; left:50%; transform:translateX(-50%); font-size:10px; color:var(--ink-dim); white-space:nowrap; }
+  .chroline{ font-size:13px; border-bottom:1px solid var(--line); padding:3px 0; display:flex; justify-content:space-between; gap:6px; }
+  .challenge-box{ background:#0d1116; border:1px solid var(--line); border-radius:3px; padding:7px 9px; font-size:14px; text-align:left; }
+  .challenge-box b{ color:var(--amber); }
+  .challenge-box.done{ opacity:.6; text-decoration:line-through; }
+  #profileBox{ max-width:460px; max-height:88vh; overflow-y:auto; }
+</style>
+</head>
+<body>
+
+<h1>ZIARNO I MGŁA</h1>
+<div class="subtitle">6 graczy, losowa mapa, mgła wojny, rzeki i mury</div>
+
+<div class="wrap">
+  <canvas id="board"></canvas>
+
+  <div class="panel">
+    <h2>TURA <span id="turnNo">1</span> — TY</h2>
+    <div class="stat-row"><b>Ziarno w tej turze</b><span class="val" id="incomeVal">0</span></div>
+    <div class="stat-row"><b>Zapasy</b><span class="val" id="suppliesVal">0</span></div>
+    <div class="stat-row"><b>Twoje pola</b><span class="val" id="tilesVal">0</span></div>
+    <hr>
+
+    <div id="allocateBox">
+      <div class="slider-row">
+        <div class="split-labels"><span>Armia</span><span>Zapasy</span></div>
+        <input type="range" id="splitSlider" min="0" max="100" value="50">
+        <div class="split-labels"><span id="splitArmyLbl">0</span><span id="splitSupplyLbl">0</span></div>
+      </div>
+      <div class="btn primary" id="confirmSplitBtn">Zatwierdź podział ➜</div>
+    </div>
+
+    <div id="actionBox" style="display:none;">
+      <div class="row2">
+        <div class="btn" id="scoutBtn">🔍 Zwiad (2)</div>
+        <div class="btn" id="wallBtn">🧱 Mury (5/15)</div>
+      </div>
+      <div class="hint" id="modeHint">Kliknij swoje pole, potem sąsiednie, by się przenieść lub zaatakować.</div>
+      <div class="btn primary" id="endTurnBtn">Zakończ turę ➜</div>
+    </div>
+
+    <hr>
+    <div id="log"></div>
+    <hr>
+    <div class="legend" id="legendBox"></div>
+    <div class="row2">
+      <div class="btn" id="restartBtn">↺ Nowa mapa</div>
+      <div class="btn" id="profileBtnInGame">👤 Profil</div>
+    </div>
+  </div>
+</div>
+
+<div id="overlay">
+  <div id="modal">
+    <h3 id="modalTitle">AKCJA</h3>
+    <div id="modalDesc"></div>
+    <div id="modalCount">1</div>
+    <input type="range" id="modalSlider" min="1" max="1" value="1">
+    <div class="modal-btns">
+      <div class="btn" id="modalCancel">Anuluj</div>
+      <div class="btn primary" id="modalOk">Potwierdź</div>
+    </div>
+  </div>
+</div>
+
+<div id="banner">
+  <div id="bannerBox">
+    <h2 id="bannerTitle">KONIEC GRY</h2>
+    <div id="bannerText" class="small-hint"></div>
+    <div id="bannerXp" class="small-hint"></div>
+    <div id="bannerBadges" class="small-hint"></div>
+    <div class="btn primary" id="bannerRestart">Zagraj ponownie</div>
+    <div class="btn" id="bannerProfile">👤 Zobacz profil</div>
+  </div>
+</div>
+
+<div id="startScreen" class="show">
+  <div id="startBox">
+    <h2>ZIARNO I MGŁA</h2>
+    <div class="small-hint">Ty i 5 botów na losowej mapie. Ziarno dzielisz na Armię i Zapasy, mgła wojny kryje resztę terenu, rzeki i mury tną drogi.</div>
+    <div class="xpwrap">
+      <div class="xplabel"><span id="startLevelLbl">Poziom 1</span><span id="startXpLbl">0/80 XP</span></div>
+      <div class="xpbar"><div class="xpbar-fill" id="startXpFill" style="width:0%"></div></div>
+    </div>
+    <div class="challenge-box" id="startDailyBox"></div>
+    <div class="challenge-box" id="startWeeklyBox"></div>
+    <div class="row2">
+      <div class="btn primary" id="startBtn">▶ Rozpocznij grę</div>
+      <div class="btn" id="profileBtnStart">👤 Profil</div>
+    </div>
+  </div>
+</div>
+
+<div id="profileOverlay">
+  <div id="profileBox">
+    <h2>TWÓJ PROFIL</h2>
+
+    <div class="profile-section">
+      <div class="xplabel"><span id="pLevelLbl">Poziom 1</span><span id="pXpLbl">0/80 XP</span></div>
+      <div class="xpbar"><div class="xpbar-fill" id="pXpFill" style="width:0%"></div></div>
+    </div>
+
+    <div class="profile-section">
+      <h3>STATYSTYKI</h3>
+      <div class="statgrid" id="statGrid"></div>
+    </div>
+
+    <div class="profile-section">
+      <h3>WYZWANIA</h3>
+      <div class="challenge-box" id="pDailyBox"></div>
+      <div class="challenge-box" id="pWeeklyBox" style="margin-top:6px;"></div>
+    </div>
+
+    <div class="profile-section">
+      <h3>ODZNAKI</h3>
+      <div class="badgegrid" id="badgeGrid"></div>
+    </div>
+
+    <div class="profile-section" style="padding-bottom:14px;">
+      <h3>KOLOR GRACZA</h3>
+      <div class="skinrow" id="skinRow" style="margin-bottom:16px;"></div>
+    </div>
+
+    <div class="profile-section">
+      <h3>KRONIKA (ostatnie gry)</h3>
+      <div id="chronicleBox"></div>
+    </div>
+
+    <div class="btn primary" id="profileClose">Zamknij</div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ================= PROFIL / PROGRESJA (localStorage) ================= */
+const PROFILE_KEY='ziarnoIMglaProfile_v1';
+function defaultProfile(){
+  return {
+    xp:0, level:1,
+    gamesPlayed:0, gamesWon:0, winStreak:0, bestWinStreak:0,
+    tilesConquered:0, wallsBuilt:0, wallsDestroyed:0, scoutsUsed:0,
+    shapesWon:{}, shapesPlayed:{}, badges:{},
+    chronicle:[],
+    unlockedSkins:['blue'], selectedSkin:'blue',
+    challengeDate:null, dailyChallengeId:null, dailyDone:false,
+    challengeWeek:null, weeklyChallengeId:null, weeklyDone:false,
+  };
+}
+function loadProfile(){
+  try{ const raw=localStorage.getItem(PROFILE_KEY); if(raw){ const p=JSON.parse(raw); return Object.assign(defaultProfile(),p); } }catch(e){}
+  return defaultProfile();
+}
+function saveProfile(){ try{ localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); }catch(e){} }
+let profile=loadProfile();
+
+const SKINS=[
+  {id:'blue',    name:'Błękit',   color:'#4f8fdb', unlockLevel:1},
+  {id:'orange',  name:'Bursztyn', color:'#e08a3c', unlockLevel:3},
+  {id:'magenta', name:'Magenta',  color:'#c94f9e', unlockLevel:5},
+  {id:'silver',  name:'Srebro',   color:'#d8dde2', unlockLevel:8},
+  {id:'indigo',  name:'Indygo',   color:'#5d5fce', unlockLevel:12},
+];
+function xpForLevel(l){ return 80+(l-1)*35; }
+function recomputeLevel(){
+  let lvl=1, remaining=profile.xp, need=xpForLevel(lvl);
+  while(remaining>=need){ remaining-=need; lvl++; need=xpForLevel(lvl); }
+  profile.level=lvl; profile.xpIntoLevel=remaining; profile.xpForNext=need;
+  SKINS.forEach(s=>{ if(s.unlockLevel<=profile.level && profile.unlockedSkins.indexOf(s.id)===-1) profile.unlockedSkins.push(s.id); });
+}
+recomputeLevel();
+
+const BADGES=[
+  {id:'first_win',    name:'Pierwsza Wygrana',       desc:'Wygraj swoją pierwszą partię.', check:p=>p.gamesWon>=1},
+  {id:'no_loss_win',  name:'Twierdza Niezdobyta',    desc:'Wygraj bez utraty pola.', check:null},
+  {id:'wall_builder', name:'Budowniczy Murów',       desc:'Zbuduj łącznie 10 murów.', check:p=>p.wallsBuilt>=10},
+  {id:'wall_breaker', name:'Niszczyciel Murów',      desc:'Zniszcz łącznie 5 wrogich murów.', check:p=>p.wallsDestroyed>=5},
+  {id:'scout_master', name:'Mistrz Zwiadu',          desc:'Wyślij zwiad 20 razy łącznie.', check:p=>p.scoutsUsed>=20},
+  {id:'six_way_win',  name:'Pogromca Piątki',        desc:'Wygraj eliminując wszystkich 5 botów.', check:null},
+  {id:'all_shapes',   name:'Kartograf',              desc:'Wygraj na wszystkich 15 kształtach map.', check:p=>Object.keys(p.shapesWon).length>=15},
+  {id:'famine_survivor',name:'Ocalały z Głodu',      desc:'Przetrwaj głód i mimo to wygraj.', check:null},
+  {id:'streak5',      name:'Passa Zwycięstw',        desc:'Wygraj 5 gier z rzędu.', check:p=>p.bestWinStreak>=5},
+];
+
+const CHALLENGES=[
+  {id:'win_ring',    desc:'Wygraj partię na mapie typu "Pierścień".', reward:40, check:r=>r.won && r.shape==='Pierścień'},
+  {id:'build3walls', desc:'Zbuduj co najmniej 3 murki w jednej partii.', reward:40, check:r=>r.wallsBuiltThisGame>=3},
+  {id:'no_loss',     desc:'Wygraj partię bez utraty pola.', reward:40, check:r=>r.won && !r.lostAnyTile},
+  {id:'own15',       desc:'Zdobądź co najmniej 15 pól w jednej partii.', reward:40, check:r=>r.tilesOwned>=15},
+  {id:'break_wall',  desc:'Zniszcz wrogi murek w jednej partii.', reward:40, check:r=>r.wallsDestroyedThisGame>=1},
+  {id:'scout5',      desc:'Wykonaj co najmniej 5 zwiadów w jednej partii.', reward:40, check:r=>r.scoutsThisGame>=5},
+  {id:'eliminate_all',desc:'Wygraj eliminując wszystkich rywali.', reward:40, check:r=>r.won && r.reason==='ELIMINATION_WIN'},
+];
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function weekStr(){ const d=new Date(); const onejan=new Date(d.getFullYear(),0,1); const wk=Math.ceil((((d-onejan)/86400000)+onejan.getDay()+1)/7); return d.getFullYear()+'-W'+wk; }
+function seedNum(str){ let h=0; for(let i=0;i<str.length;i++) h=(h*31+str.charCodeAt(i))>>>0; return h; }
+function ensureChallenges(){
+  const t=todayStr();
+  if(profile.challengeDate!==t){ profile.challengeDate=t; profile.dailyChallengeId=CHALLENGES[seedNum(t)%CHALLENGES.length].id; profile.dailyDone=false; }
+  const w=weekStr();
+  if(profile.challengeWeek!==w){ profile.challengeWeek=w; profile.weeklyChallengeId=CHALLENGES[seedNum(w+'x')%CHALLENGES.length].id; profile.weeklyDone=false; }
+  saveProfile();
+}
+ensureChallenges();
+
+/* ================= STAŁE PLANSZY ================= */
+const W=12, H=8, TILE=40, GAP=13;
+const canvas=document.getElementById('board');
+canvas.width = GAP + W*(TILE+GAP);
+canvas.height = GAP + H*(TILE+GAP);
+const ctx=canvas.getContext('2d');
+ctx.imageSmoothingEnabled=false;
+function px(x){ return GAP + x*(TILE+GAP); }
+function py(y){ return GAP + y*(TILE+GAP); }
+
+const TERRAIN = {
+  plains:{name:'Równina', prod:1, def:1.0, base:'#4c6b45', dot:'#3d5738'},
+  hills: {name:'Wzgórza', prod:1, def:1.35, base:'#6b5a3f', dot:'#584a33'},
+  fields:{name:'Pola',    prod:2, def:0.9, base:'#8a9a4a', dot:'#75833d'},
+};
+
+const AI_IDS=[2,3,4,5,6];
+const PLAYERS=[
+  null,
+  {id:1, name:'Ty',        color:'#4f8fdb', human:true,  supplies:6, alive:true},
+  {id:2, name:'Czerwoni',  color:'#d1495b', human:false, supplies:6, alive:true},
+  {id:3, name:'Zieloni',   color:'#6a9955', human:false, supplies:6, alive:true},
+  {id:4, name:'Żółci',     color:'#d9b64e', human:false, supplies:6, alive:true},
+  {id:5, name:'Fioletowi', color:'#8e5fd1', human:false, supplies:6, alive:true},
+  {id:6, name:'Turkusowi', color:'#2fb6a3', human:false, supplies:6, alive:true},
+];
+
+/* ================= 15 kształtów map (współrzędne znormalizowane) ================= */
+const SHAPES=[
+  {name:'Równina',        test:()=>true},
+  {name:'Diament',        test:(x,y,cx,cy)=>{const nx=(x-cx)/cx,ny=(y-cy)/cy; return Math.abs(nx)+Math.abs(ny)<=1.05;}},
+  {name:'Krzyż',          test:(x,y,cx,cy)=>{const nx=(x-cx)/cx,ny=(y-cy)/cy; return Math.abs(nx)<=0.32||Math.abs(ny)<=0.34;}},
+  {name:'Pierścień',      test:(x,y,cx,cy)=>{const nx=(x-cx)/cx,ny=(y-cy)/cy; const d=Math.hypot(nx,ny); return d>=0.3&&d<=0.95;}},
+  {name:'Klepsydra',      test:(x,y,cx,cy)=>{const nx=(x-cx)/cx,ny=(y-cy)/cy; return Math.abs(nx)<=Math.abs(ny)*0.9+0.16;}},
+  {name:'Schody',         test:(x,y)=>{const m=((x-y*1.2)%5+5)%5; return m<3.6;}},
+  {name:'Fale',           test:(x,y,cx,cy)=>{const nx=(x-cx)/cx,ny=(y-cy)/cy; return Math.abs(ny-Math.sin(nx*3)*0.5)<0.32;}},
+  {name:'Trapez',         test:(x,y,cx,cy)=>{const nx=(x-cx)/cx,ny=(y-cy)/cy; const half=0.22+(ny+1)/2*0.9; return Math.abs(nx)<=half;}},
+  {name:'Litera X',       test:(x,y,cx,cy)=>{const nx=(x-cx)/cx,ny=(y-cy)/cy; return Math.min(Math.abs(nx-ny),Math.abs(nx+ny))<0.26;}},
+  {name:'Ośmiokąt',       test:(x,y,cx,cy)=>{const nx=(x-cx)/cx,ny=(y-cy)/cy; return Math.abs(nx)+Math.abs(ny)<=1.05&&Math.abs(nx)<=0.85&&Math.abs(ny)<=0.85;}},
+  {name:'Motyl',          test:(x,y,cx,cy)=>{const nx=(x-cx)/cx,ny=(y-cy)/cy; return Math.abs(ny)*1.3<=(0.85-Math.abs(nx)*0.8)||Math.abs(nx)<0.16;}},
+  {name:'Romb wydłużony', test:(x,y,cx,cy)=>{const nx=(x-cx)/cx,ny=(y-cy)/cy; return Math.abs(nx)*0.8+Math.abs(ny)*1.6<=1.05;}},
+  {name:'Korytarz',       test:(x,y,cx,cy)=>{const nx=(x-cx)/cx,ny=(y-cy)/cy; return Math.abs(ny)<=0.3||Math.abs(nx)<=0.28;}},
+  {name:'Podwójny trójkąt',test:(x,y,cx,cy)=>{const nx=(x-cx)/cx,ny=(y-cy)/cy; const rel=1-Math.abs(ny); return Math.abs(nx)<=rel*0.9+0.15;}},
+  {name:'Wyspy',          test:(x,y)=> !((x%3===2)&&(y%2===1))},
+];
+
+let grid=null, edges=null, currentShapeName='';
+let turnNo=1, phase='ALLOCATE', selected=null, scoutMode=false, wallMode=false, gameOver=false;
+let scoutedNow=new Set();
+let effects=[], shakeUntil=0, shakeMag=0;
+let gameCounters={wallsBuilt:0,wallsDestroyed:0,scouts:0,lostAnyTile:false,hadFamine:false};
+
+/* ================= dźwięk ================= */
+let audioCtx=null;
+function beep(freq,dur,type,vol){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type=type||'square'; o.frequency.value=freq; g.gain.value=vol||0.05;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+(dur||0.1));
+    o.stop(audioCtx.currentTime+(dur||0.1)+0.02);
+  }catch(e){}
+}
+
+/* ================= generowanie mapy ================= */
+function floodFillActive(raw){
+  let start=null;
+  for(let y=0;y<H && !start;y++) for(let x=0;x<W;x++) if(raw[y][x]){ start={x,y}; break; }
+  if(!start) return {mask:raw, count:0};
+  const seen=Array.from({length:H},()=>Array(W).fill(false));
+  const stack=[start]; seen[start.y][start.x]=true; let count=0;
+  while(stack.length){
+    const {x,y}=stack.pop(); count++;
+    for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+      const nx=x+dx, ny=y+dy;
+      if(nx>=0&&nx<W&&ny>=0&&ny<H&&raw[ny][nx]&&!seen[ny][nx]){ seen[ny][nx]=true; stack.push({x:nx,y:ny}); }
+    }
+  }
+  return {mask:seen, count};
+}
+function edgeKeyRaw(ax,ay,bx,by){
+  if(ay>by || (ay===by&&ax>bx)){ const t1=ax,t2=ay; ax=bx;ay=by;bx=t1;by=t2; }
+  return ax+'_'+ay+'_'+bx+'_'+by;
+}
+function edgeKey(a,b){ return edgeKeyRaw(a.x,a.y,b.x,b.y); }
+function getEdge(a,b){ return edges.get(edgeKey(a,b)); }
+function canCross(a,b){
+  const e=getEdge(a,b); if(!e) return true;
+  if(e.wall && e.wall.alive) return false;
+  if(e.river && !e.bridge) return false;
+  return true;
+}
+function tileAt(x,y){ return (x>=0&&x<W&&y>=0&&y<H) ? grid[y][x] : null; }
+function neighbors(x,y){ return [[x,y-1],[x,y+1],[x-1,y],[x+1,y]].map(([nx,ny])=>tileAt(nx,ny)).filter(Boolean); }
+function allTiles(){ const a=[]; for(let y=0;y<H;y++) for(let x=0;x<W;x++) if(grid[y][x]) a.push(grid[y][x]); return a; }
+function ownedBy(pid){ return allTiles().filter(t=>t.owner===pid); }
+function income(pid){ return ownedBy(pid).reduce((s,t)=>s+TERRAIN[t.terrain].prod,0); }
+function capitalOf(pid){ return allTiles().find(t=>t.capital&&t.owner===pid) || ownedBy(pid)[0]; }
+
+function carveRiver(){
+  let leftCells=[];
+  for(let cxTry=0; cxTry<3 && leftCells.length===0; cxTry++){ for(let y=0;y<H;y++) if(grid[y][cxTry]) leftCells.push(grid[y][cxTry]); }
+  if(leftCells.length===0) return;
+  let cur=leftCells[Math.floor(Math.random()*leftCells.length)];
+  const path=[]; let guard=0;
+  while(cur.x<W-1 && guard<80){
+    guard++;
+    const opts=[];
+    const r=tileAt(cur.x+1,cur.y); if(r) opts.push(r);
+    const d=tileAt(cur.x,cur.y+1); if(d && Math.random()<0.4) opts.push(d);
+    const u=tileAt(cur.x,cur.y-1); if(u && Math.random()<0.4) opts.push(u);
+    if(opts.length===0) break;
+    const next=opts[Math.floor(Math.random()*opts.length)];
+    if(!cur.capital && !next.capital){ const e=getEdge(cur,next); if(e){ e.river=true; path.push(e); } }
+    cur=next;
+  }
+  path.forEach((e,i)=>{ if(i%3===0) e.bridge=true; });
+}
+
+function buildMap(){
+  const cx=(W-1)/2, cy=(H-1)/2;
+  const shape=SHAPES[Math.floor(Math.random()*SHAPES.length)];
+  const raw=[];
+  for(let y=0;y<H;y++){ const row=[]; for(let x=0;x<W;x++) row.push(!!shape.test(x,y,cx,cy,W,H)); raw.push(row); }
+  let {mask,count}=floodFillActive(raw);
+  if(count<45) mask=Array.from({length:H},()=>Array(W).fill(true));
+
+  grid=Array.from({length:H},()=>Array(W).fill(null));
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+    if(!mask[y][x]) continue;
+    const r=Math.random();
+    const tKey = r<0.55?'plains': r<0.8?'hills':'fields';
+    grid[y][x]={x,y,owner:0, units: Math.random()<0.4?0:(1+Math.floor(Math.random()*2)), terrain:tKey, acted:false, capital:false};
+  }
+
+  const used=new Set();
+  function spot(ax,ay){
+    let best=null,bestD=Infinity;
+    for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+      if(!grid[y][x]) continue;
+      const k=x+','+y; if(used.has(k)) continue;
+      const d=Math.hypot(x-ax,y-ay);
+      if(d<bestD){ bestD=d; best={x,y}; }
+    }
+    if(best) used.add(best.x+','+best.y);
+    return best;
+  }
+  const rx=cx*0.92, ry=cy*0.92;
+  const anchors=[];
+  for(let i=0;i<6;i++){
+    const ang=(-90+60*i)*Math.PI/180;
+    anchors.push([cx+rx*Math.cos(ang), cy+ry*Math.sin(ang)]);
+  }
+  anchors.forEach(([ax,ay],i)=>{
+    const s=spot(ax,ay);
+    if(s){ const t=grid[s.y][s.x]; t.owner=i+1; t.units=6; t.terrain='hills'; t.capital=true; }
+  });
+
+  edges=new Map();
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+    if(!grid[y][x]) continue;
+    if(x+1<W && grid[y][x+1]) edges.set(edgeKeyRaw(x,y,x+1,y), {a:{x,y},b:{x:x+1,y}, river:false, bridge:false, wall:null, builders:new Set(), rect:{rx:px(x)+TILE, ry:py(y), rw:GAP, rh:TILE}});
+    if(y+1<H && grid[y+1][x]) edges.set(edgeKeyRaw(x,y,x,y+1), {a:{x,y},b:{x,y:y+1}, river:false, bridge:false, wall:null, builders:new Set(), rect:{rx:px(x), ry:py(y)+TILE, rw:TILE, rh:GAP}});
+  }
+  carveRiver();
+  currentShapeName=shape.name;
+}
+
+/* ================= log ================= */
+function log(msg){ const d=document.getElementById('log'); const line=document.createElement('div'); line.textContent=msg; d.appendChild(line); d.scrollTop=d.scrollHeight; }
+function clearLog(){ document.getElementById('log').innerHTML=''; }
+
+/* ================= legenda dynamiczna ================= */
+function renderLegend(){
+  const box=document.getElementById('legendBox');
+  box.innerHTML='';
+  PLAYERS.forEach(p=>{ if(!p) return;
+    const s=document.createElement('span');
+    s.innerHTML=`<i class="swatch" style="background:${p.color}"></i>${p.name}`;
+    box.appendChild(s);
+  });
+  const river=document.createElement('span'); river.innerHTML='<i class="swatch" style="background:#2a72b8"></i>Rzeka'; box.appendChild(river);
+  const wall=document.createElement('span'); wall.innerHTML='<i class="swatch" style="background:#9a9488"></i>Murek'; box.appendChild(wall);
+}
+
+/* ================= nowa gra ================= */
+function newGame(){
+  PLAYERS[1].color = (SKINS.find(s=>s.id===profile.selectedSkin)||SKINS[0]).color;
+  buildMap();
+  for(const p of PLAYERS) if(p){ p.supplies=6; p.alive=true; }
+  turnNo=1; phase='ALLOCATE'; selected=null; scoutMode=false; wallMode=false; gameOver=false;
+  scoutedNow=new Set(); effects=[]; shakeUntil=0;
+  gameCounters={wallsBuilt:0,wallsDestroyed:0,scouts:0,lostAnyTile:false,hadFamine:false};
+  document.getElementById('banner').classList.remove('show');
+  document.getElementById('startScreen').classList.remove('show');
+  clearLog();
+  renderLegend();
+  log('Wylosowana mapa: '+currentShapeName+'. Gracze rozstawieni po obwodzie planszy.');
+  document.getElementById('splitSlider').value=50;
+  updateSplitPreview();
+  updatePanel();
+}
+
+/* ================= mgła wojny ================= */
+function isVisible(t){
+  if(t.owner===1) return true;
+  if(scoutedNow.has(t.x+','+t.y)) return true;
+  for(const n of neighbors(t.x,t.y)) if(n.owner===1) return true;
+  for(const [dx,dy] of [[t.x-1,t.y-1],[t.x+1,t.y-1],[t.x-1,t.y+1],[t.x+1,t.y+1]]){ const d=tileAt(dx,dy); if(d && d.owner===1) return true; }
+  return false;
+}
+function isScoutable(t){
+  if(isVisible(t)) return false;
+  for(const own of ownedBy(1)) if(Math.max(Math.abs(own.x-t.x),Math.abs(own.y-t.y))<=2) return true;
+  return false;
+}
+
+/* ================= panel UI ================= */
+function updatePanel(){
+  document.getElementById('turnNo').textContent=turnNo;
+  document.getElementById('incomeVal').textContent = phase==='ALLOCATE' ? income(1) : '—';
+  document.getElementById('suppliesVal').textContent = PLAYERS[1].supplies;
+  document.getElementById('tilesVal').textContent = ownedBy(1).length;
+  document.getElementById('allocateBox').style.display = phase==='ALLOCATE' ? 'flex':'none';
+  document.getElementById('actionBox').style.display = phase==='ACTION' ? 'flex':'none';
+  document.getElementById('scoutBtn').classList.toggle('active', scoutMode);
+  document.getElementById('wallBtn').classList.toggle('active', wallMode);
+  document.getElementById('modeHint').textContent = wallMode
+    ? 'Kliknij przerwę przy swoim polu: pusta = buduj murek (5 zapasów), wrogi murek = zniszcz (15 zapasów).'
+    : scoutMode ? 'Kliknij podświetlone zakryte pole, by wysłać zwiad (2 zapasy).'
+    : 'Kliknij swoje pole, potem sąsiednie, by się przenieść lub zaatakować.';
+}
+function updateSplitPreview(){
+  const inc=income(1);
+  const pct=Number(document.getElementById('splitSlider').value);
+  const army=Math.round(inc*pct/100), supply=inc-army;
+  document.getElementById('splitArmyLbl').textContent=army+' ➜ armia';
+  document.getElementById('splitSupplyLbl').textContent=supply+' ➜ zapasy';
+}
+document.getElementById('splitSlider').addEventListener('input', updateSplitPreview);
+
+document.getElementById('confirmSplitBtn').addEventListener('click', ()=>{
+  const inc=income(1);
+  const pct=Number(document.getElementById('splitSlider').value);
+  const army=Math.round(inc*pct/100), supply=inc-army;
+  PLAYERS[1].supplies+=supply;
+  const cap=capitalOf(1);
+  if(cap){ cap.units+=army; effects.push({type:'harvest', x:cap.x, y:cap.y, start:performance.now(), dur:600}); }
+  beep(520,.09,'triangle',.05);
+  log(`Zebrano ${inc} ziarna: +${army} do armii (zamek), +${supply} do zapasów.`);
+
+  const upkeep=Math.ceil(ownedBy(1).length/3);
+  if(PLAYERS[1].supplies<upkeep){
+    PLAYERS[1].supplies=0;
+    const mine=ownedBy(1).filter(t=>!t.capital);
+    if(mine.length>0){
+      mine.sort((a,b)=>a.units-b.units);
+      const lost=mine[0];
+      log(`⚠ GŁÓD! Zapasów zabrakło (trzeba ${upkeep}). Tracisz pole (${lost.x},${lost.y}).`);
+      lost.crumbleUntil=performance.now()+500;
+      beep(160,.22,'sawtooth',.06);
+      lost.owner=0; lost.units=Math.max(1,Math.floor(lost.units/2));
+      gameCounters.lostAnyTile=true; gameCounters.hadFamine=true;
+    } else { log('⚠ GŁÓD! Zabrakło zapasów, ale to Twój jedyny bastion — przetrwał o włos.'); }
+  } else {
+    PLAYERS[1].supplies-=upkeep;
+    log(`Utrzymanie ziem pochłonęło ${upkeep} zapasów.`);
+  }
+
+  phase='ACTION';
+  allTiles().forEach(t=>t.acted=false);
+  scoutedNow.clear();
+  updatePanel();
+  checkGameOver();
+});
+
+document.getElementById('scoutBtn').addEventListener('click', ()=>{ scoutMode=!scoutMode; wallMode=false; selected=null; updatePanel(); });
+document.getElementById('wallBtn').addEventListener('click', ()=>{ wallMode=!wallMode; scoutMode=false; selected=null; updatePanel(); });
+document.getElementById('endTurnBtn').addEventListener('click', ()=>{ scoutMode=false; wallMode=false; selected=null; runAiTurns(); });
+document.getElementById('restartBtn').addEventListener('click', newGame);
+document.getElementById('bannerRestart').addEventListener('click', newGame);
+document.getElementById('startBtn').addEventListener('click', newGame);
+document.getElementById('profileBtnStart').addEventListener('click', ()=>openProfile());
+document.getElementById('profileBtnInGame').addEventListener('click', ()=>openProfile());
+document.getElementById('bannerProfile').addEventListener('click', ()=>openProfile());
+document.getElementById('profileClose').addEventListener('click', ()=>{ document.getElementById('profileOverlay').classList.remove('show'); });
+
+/* ================= hit-testy ================= */
+function findEdgeAtPoint(cx,cy){
+  for(const e of edges.values()){
+    const r=e.rect;
+    if(cx>=r.rx-4 && cx<=r.rx+r.rw+4 && cy>=r.ry-4 && cy<=r.ry+r.rh+4) return e;
+  }
+  return null;
+}
+canvas.addEventListener('click', (e)=>{
+  if(!grid || gameOver || phase!=='ACTION') return;
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=canvas.width/rect.width, scaleY=canvas.height/rect.height;
+  const cx=(e.clientX-rect.left)*scaleX, cy=(e.clientY-rect.top)*scaleY;
+  if(wallMode){ const edge=findEdgeAtPoint(cx,cy); if(edge) handleWallClick(edge); return; }
+  const gx=Math.floor((cx-GAP)/(TILE+GAP)), gy=Math.floor((cy-GAP)/(TILE+GAP));
+  const tx=px(gx), ty=py(gy);
+  if(cx<tx || cx>tx+TILE || cy<ty || cy>ty+TILE) return;
+  const t=tileAt(gx,gy); if(!t) return;
+  if(scoutMode){ handleScoutClick(t); return; }
+  handleTileClick(t);
+});
+
+function handleScoutClick(t){
+  if(!isScoutable(t)) return;
+  if(PLAYERS[1].supplies<2){ log('Za mało zapasów na zwiad (potrzeba 2).'); return; }
+  PLAYERS[1].supplies-=2;
+  scoutedNow.add(t.x+','+t.y);
+  t.revealStart=performance.now();
+  gameCounters.scouts++; profile.scoutsUsed++;
+  beep(1300,.05,'square',.04);
+  log(`Zwiad ujawnił pole (${t.x},${t.y}): ${TERRAIN[t.terrain].name}, jednostki: ${t.owner===0?t.units:PLAYERS[t.owner].name+' '+t.units}.`);
+  scoutMode=false;
+  updatePanel();
+}
+function handleWallClick(edge){
+  const aTile=grid[edge.a.y][edge.a.x], bTile=grid[edge.b.y][edge.b.x];
+  if(!isVisible(aTile) && !isVisible(bTile)){ log('Nie widzisz tego miejsca — potrzebujesz zwiadu lub bliskości.'); return; }
+  const mine = aTile.owner===1 || bTile.owner===1;
+  if(!mine){ log('Musisz mieć własne pole przy tym miejscu.'); return; }
+  if(!edge.wall || !edge.wall.alive){
+    if(edge.builders.has(1)){ log('Już raz budowałeś murek w tym miejscu — nie da się go odbudować.'); return; }
+    if(PLAYERS[1].supplies<5){ log('Za mało zapasów na murek (potrzeba 5).'); return; }
+    PLAYERS[1].supplies-=5;
+    edge.wall={ownerId:1, alive:true}; edge.builders.add(1);
+    gameCounters.wallsBuilt++; profile.wallsBuilt++;
+    beep(150,.14,'square',.05);
+    log('Postawiono murek — blokuje przemarsz i ataki w tym miejscu.');
+  } else {
+    if(edge.wall.ownerId===1){ log('To Twój własny murek.'); return; }
+    if(PLAYERS[1].supplies<15){ log('Za mało zapasów, by zniszczyć murek (potrzeba 15).'); return; }
+    PLAYERS[1].supplies-=15;
+    edge.wall.alive=false;
+    gameCounters.wallsDestroyed++; profile.wallsDestroyed++;
+    beep(150,.2,'sawtooth',.06);
+    log('Zniszczono wrogi murek!');
+  }
+  wallMode=false;
+  updatePanel();
+}
+function handleTileClick(t){
+  if(!selected){ if(t.owner===1 && !t.acted && t.units>0) selected=t; return; }
+  if(selected===t){ selected=null; return; }
+  const adj=neighbors(selected.x,selected.y).some(n=>n.x===t.x&&n.y===t.y);
+  if(!adj){ if(t.owner===1 && !t.acted && t.units>0) selected=t; else selected=null; return; }
+  if(!canCross(selected,t)){ log('Ta droga jest zablokowana — rzeka bez mostu lub murek.'); return; }
+  openActionModal(selected, t);
+}
+
+/* ================= modal akcji ================= */
+const overlay=document.getElementById('overlay');
+const modalTitle=document.getElementById('modalTitle');
+const modalDesc=document.getElementById('modalDesc');
+const modalSlider=document.getElementById('modalSlider');
+const modalCount=document.getElementById('modalCount');
+let pendingFrom=null, pendingTo=null;
+function openActionModal(from,to){
+  pendingFrom=from; pendingTo=to;
+  const isOwn=to.owner===1;
+  modalTitle.textContent=isOwn?'PRZEMARSZ':'ATAK';
+  modalDesc.textContent=isOwn
+    ? `Ile jednostek przenieść z (${from.x},${from.y}) do własnego pola (${to.x},${to.y})?`
+    : `Ile jednostek wysłać na pole (${to.x},${to.y})? Obrońca: ${to.units} (${TERRAIN[to.terrain].name}).`;
+  modalSlider.min=1; modalSlider.max=from.units; modalSlider.value=from.units;
+  modalCount.textContent=modalSlider.value;
+  overlay.classList.add('show');
+}
+modalSlider.addEventListener('input', ()=>{ modalCount.textContent=modalSlider.value; });
+document.getElementById('modalCancel').addEventListener('click', ()=>{ overlay.classList.remove('show'); pendingFrom=null; pendingTo=null; });
+document.getElementById('modalOk').addEventListener('click', ()=>{
+  const sent=Number(modalSlider.value);
+  overlay.classList.remove('show');
+  doAction(pendingFrom,pendingTo,sent);
+  pendingFrom=null; pendingTo=null; selected=null;
+  updatePanel();
+});
+function doAction(from,to,sent){
+  from.units-=sent; from.acted=true;
+  if(to.owner===from.owner){
+    to.units+=sent;
+    effects.push({type:'march', from:{x:from.x,y:from.y}, to:{x:to.x,y:to.y}, start:performance.now(), dur:300});
+    beep(660,.05,'square',.04);
+    log(`Przemarsz: ${sent} jedn. z (${from.x},${from.y}) do (${to.x},${to.y}).`);
+    return;
+  }
+  resolveCombat(from.owner, sent, to, from);
+}
+function resolveCombat(attackerId, attackUnits, defTile, fromTile){
+  const attackerName = attackerId===1?'Ty':PLAYERS[attackerId].name;
+  const prevOwner=defTile.owner;
+  if(fromTile) effects.push({type:'projectile', from:{x:fromTile.x,y:fromTile.y}, to:{x:defTile.x,y:defTile.y}, start:performance.now(), dur:250});
+  shakeUntil=performance.now()+220; shakeMag=5;
+
+  if(defTile.units===0){
+    defTile.owner=attackerId; defTile.units=attackUnits;
+    defTile.flashUntil=performance.now()+300; defTile.flashColor='#ffffff';
+    beep(760,.06,'square',.04);
+    log(`${attackerName} zajmuje niebronione pole (${defTile.x},${defTile.y}).`);
+    if(prevOwner===1 && attackerId!==1) gameCounters.lostAnyTile=true;
+    checkGameOver(); return;
+  }
+  const def=TERRAIN[defTile.terrain].def * (defTile.capital?1.2:1);
+  let atkRoll = attackUnits * (0.8+Math.random()*0.4);
+  const defRoll = defTile.units * def * (0.8+Math.random()*0.4);
+  if(atkRoll>defRoll){
+    const remaining=Math.max(1, Math.round(attackUnits - defTile.units*0.5));
+    const defenderName = defTile.owner===0?'niczyje':PLAYERS[defTile.owner].name;
+    log(`⚔ ${attackerName} zwycięża pod (${defTile.x},${defTile.y}) (był: ${defenderName}). Zajmuje pole z ${remaining} jedn.`);
+    defTile.owner=attackerId; defTile.units=remaining; defTile.capital=false;
+    defTile.flashUntil=performance.now()+300; defTile.flashColor='#ffffff';
+    beep(880,.08,'square',.05);
+    if(prevOwner===1 && attackerId!==1) gameCounters.lostAnyTile=true;
+  } else {
+    const survive=Math.max(0, Math.round(defTile.units - attackUnits*0.5));
+    defTile.units=survive;
+    defTile.flashUntil=performance.now()+300; defTile.flashColor='#d1495b';
+    beep(220,.16,'sawtooth',.05);
+    log(`🛡 Atak ${attackerName} na (${defTile.x},${defTile.y}) odparty. Obrońca ma teraz ${survive} jedn.`);
+  }
+  checkGameOver();
+}
+
+/* ================= AI ================= */
+function runAiTurns(){
+  phase='AI'; updatePanel();
+  const ids=AI_IDS.filter(id=>PLAYERS[id].alive);
+  const step=()=>{
+    if(ids.length===0){ finishAiPhase(); return; }
+    aiTurn(ids.shift());
+    setTimeout(step, 220);
+  };
+  setTimeout(step, 150);
+}
+function aiTurn(id){
+  if(!PLAYERS[id].alive) return;
+  const p=PLAYERS[id];
+  const tiles=ownedBy(id);
+  if(tiles.length===0){ p.alive=false; return; }
+  const inc=tiles.reduce((s,t)=>s+TERRAIN[t.terrain].prod,0);
+  const armyShare=Math.round(inc*0.85), supplyShare=inc-armyShare;
+  p.supplies+=supplyShare;
+  const cap=allTiles().find(t=>t.capital&&t.owner===id) || tiles[0];
+  cap.units+=armyShare;
+  const upkeep=Math.ceil(tiles.length/3);
+  if(p.supplies<upkeep){
+    p.supplies=0;
+    const mine=tiles.filter(t=>!t.capital);
+    if(mine.length>0){
+      mine.sort((a,b)=>a.units-b.units);
+      mine[0].crumbleUntil=performance.now()+500;
+      mine[0].owner=0; mine[0].units=Math.max(1,Math.floor(mine[0].units/2));
+      log(`${p.name} cierpi głód i traci pole (${mine[0].x},${mine[0].y}).`);
+    }
+  } else { p.supplies-=upkeep; }
+
+  // konsolidacja: przerzuć siły z zaplecza na linię frontu, zanim zaatakujemy
+  let reinforceLeft=6;
+  const interior=ownedBy(id).filter(t=>t.units>3 && neighbors(t.x,t.y).every(n=>n.owner===id || !canCross(t,n)));
+  for(const t of interior){
+    if(reinforceLeft<=0) break;
+    const border=neighbors(t.x,t.y).find(n=>n.owner===id);
+    if(!border) continue;
+    const send=t.units-1;
+    if(send<=0) continue;
+    t.units-=send; border.units+=send;
+    reinforceLeft--;
+  }
+
+  let attacksLeft=8;
+  const myTiles=ownedBy(id).filter(t=>t.units>1).sort((a,b)=>b.units-a.units);
+  for(const t of myTiles){
+    if(attacksLeft<=0) break;
+    const targets=neighbors(t.x,t.y).filter(n=>n.owner!==id && canCross(t,n));
+    if(targets.length===0) continue;
+    targets.sort((a,b)=>{
+      const aIsPlayer=a.owner===1?0:1, bIsPlayer=b.owner===1?0:1;
+      if(aIsPlayer!==bIsPlayer) return aIsPlayer-bIsPlayer;
+      return a.units-b.units;
+    });
+    const target=targets[0];
+    const sendable=t.units-1;
+    if(sendable<=0) continue;
+    if(target.units===0 || sendable >= target.units*0.55){
+      resolveCombat(id, sendable, target, t);
+      t.units-=sendable;
+      attacksLeft--;
+    }
+  }
+}
+function finishAiPhase(){
+  turnNo++; phase='ALLOCATE';
+  document.getElementById('splitSlider').value=50;
+  updateSplitPreview(); updatePanel();
+  checkGameOver();
+}
+
+/* ================= koniec gry + progresja ================= */
+function checkGameOver(){
+  if(gameOver) return;
+  for(const p of PLAYERS) if(p) p.alive = ownedBy(p.id).length>0;
+  if(!PLAYERS[1].alive){ endGame('PRZEGRANA','Straciłeś wszystkie ziemie. Twój lud rozpadł się na wygnaniu.', false, 'LOSS'); return; }
+  const aliveOthers=AI_IDS.filter(id=>PLAYERS[id].alive);
+  if(aliveOthers.length===0){ endGame('ZWYCIĘSTWO!','Wszyscy rywale zostali podbici. Ziarno i Mgła należą do Ciebie.', true, 'ELIMINATION_WIN'); return; }
+  if(turnNo>45){
+    const counts=[1,...AI_IDS].map(id=>({id,n:ownedBy(id).length})).sort((a,b)=>b.n-a.n);
+    if(counts[0].id===1) endGame('ZWYCIĘSTWO PUNKTOWE','Po 45 turach masz najwięcej ziem na mapie.', true, 'POINT_WIN');
+    else endGame('KONIEC CZASU', `${PLAYERS[counts[0].id].name} kontrolują najwięcej ziem po 45 turach.`, false, 'TIME_OTHER');
+  }
+}
+function endGame(title,text,won,reason){
+  gameOver=true;
+  const tilesOwned=ownedBy(1).length;
+  const res={ won, reason, shape:currentShapeName, tilesOwned,
+    wallsBuiltThisGame:gameCounters.wallsBuilt, wallsDestroyedThisGame:gameCounters.wallsDestroyed,
+    scoutsThisGame:gameCounters.scouts, lostAnyTile:gameCounters.lostAnyTile, hadFamine:gameCounters.hadFamine };
+
+  profile.gamesPlayed++;
+  profile.shapesPlayed[currentShapeName]=(profile.shapesPlayed[currentShapeName]||0)+1;
+  profile.tilesConquered += tilesOwned;
+  let xpGain = 20 + tilesOwned*2;
+  if(won){
+    profile.gamesWon++; profile.winStreak++; profile.bestWinStreak=Math.max(profile.bestWinStreak,profile.winStreak);
+    profile.shapesWon[currentShapeName]=true;
+    xpGain += 60;
+    if(reason==='ELIMINATION_WIN') xpGain+=25;
+  } else { profile.winStreak=0; }
+  profile.xp += xpGain;
+
+  const newBadges=[];
+  if(won && !res.lostAnyTile && !profile.badges['no_loss_win']){ profile.badges['no_loss_win']=true; newBadges.push('no_loss_win'); }
+  if(won && reason==='ELIMINATION_WIN' && !profile.badges['six_way_win']){ profile.badges['six_way_win']=true; newBadges.push('six_way_win'); }
+  if(won && res.hadFamine && !profile.badges['famine_survivor']){ profile.badges['famine_survivor']=true; newBadges.push('famine_survivor'); }
+  BADGES.forEach(b=>{ if(b.check && b.check(profile) && !profile.badges[b.id]){ profile.badges[b.id]=true; newBadges.push(b.id); } });
+
+  ensureChallenges();
+  let challengeMsg='';
+  const daily=CHALLENGES.find(c=>c.id===profile.dailyChallengeId);
+  if(daily && !profile.dailyDone && daily.check(res)){ profile.dailyDone=true; profile.xp+=daily.reward; challengeMsg+=`Wyzwanie dnia ukończone! (+${daily.reward} XP) `; }
+  const weekly=CHALLENGES.find(c=>c.id===profile.weeklyChallengeId);
+  if(weekly && !profile.weeklyDone && weekly.check(res)){ profile.weeklyDone=true; profile.xp+=weekly.reward*2; challengeMsg+=`Wyzwanie tygodnia ukończone! (+${weekly.reward*2} XP)`; }
+
+  const levelBefore=profile.level;
+  recomputeLevel();
+  const leveledUp = profile.level>levelBefore;
+
+  profile.chronicle.unshift({date:todayStr(), result:won?'Wygrana':'Przegrana', shape:currentShapeName, turns:turnNo, tiles:tilesOwned});
+  profile.chronicle = profile.chronicle.slice(0,20);
+  saveProfile();
+
+  document.getElementById('bannerTitle').textContent=title;
+  document.getElementById('bannerText').textContent=text;
+  document.getElementById('bannerXp').textContent = `+${xpGain} XP` + (leveledUp?`  •  Nowy poziom: ${profile.level}!`:'') ;
+  document.getElementById('bannerBadges').textContent =
+    (newBadges.length? 'Nowa odznaka: '+newBadges.map(id=>BADGES.find(b=>b.id===id).name).join(', ')+'. ':'') + challengeMsg;
+  document.getElementById('banner').classList.add('show');
+}
+
+/* ================= PROFIL: renderowanie ================= */
+function xpBar(prefix){
+  document.getElementById(prefix+'LevelLbl').textContent='Poziom '+profile.level;
+  document.getElementById(prefix+'XpLbl').textContent=profile.xpIntoLevel+'/'+profile.xpForNext+' XP';
+  document.getElementById(prefix+'XpFill').style.width=Math.round(100*profile.xpIntoLevel/profile.xpForNext)+'%';
+}
+function challengeBoxHTML(challId,done){
+  const c=CHALLENGES.find(x=>x.id===challId);
+  if(!c) return '';
+  return (done?'✅ ':'⏳ ')+'<b>'+(done?'Ukończono: ':'')+'</b>'+c.desc+(done?'':' (+'+c.reward+' XP)');
+}
+function renderStartScreen(){
+  xpBar('start');
+  ensureChallenges();
+  document.getElementById('startDailyBox').innerHTML='<b>Dziś:</b> '+challengeBoxHTML(profile.dailyChallengeId, profile.dailyDone);
+  document.getElementById('startDailyBox').classList.toggle('done', profile.dailyDone);
+  document.getElementById('startWeeklyBox').innerHTML='<b>Ten tydzień:</b> '+challengeBoxHTML(profile.weeklyChallengeId, profile.weeklyDone);
+  document.getElementById('startWeeklyBox').classList.toggle('done', profile.weeklyDone);
+}
+function openProfile(){
+  xpBar('p');
+  const sg=document.getElementById('statGrid');
+  const winRate = profile.gamesPlayed? Math.round(100*profile.gamesWon/profile.gamesPlayed):0;
+  let favShape='—', favN=0;
+  Object.keys(profile.shapesPlayed).forEach(k=>{ if(profile.shapesPlayed[k]>favN){ favN=profile.shapesPlayed[k]; favShape=k; } });
+  sg.innerHTML=`
+    <div>Rozegrane gry</div><div>${profile.gamesPlayed}</div>
+    <div>Wygrane</div><div>${profile.gamesWon}</div>
+    <div>% wygranych</div><div>${winRate}%</div>
+    <div>Najlepsza passa</div><div>${profile.bestWinStreak}</div>
+    <div>Aktualna passa</div><div>${profile.winStreak}</div>
+    <div>Zdobyte pola (łącznie)</div><div>${profile.tilesConquered}</div>
+    <div>Murów zbudowanych</div><div>${profile.wallsBuilt}</div>
+    <div>Murów zniszczonych</div><div>${profile.wallsDestroyed}</div>
+    <div>Zwiadów wysłanych</div><div>${profile.scoutsUsed}</div>
+    <div>Ulubiona mapa</div><div>${favShape}</div>
+  `;
+
+  ensureChallenges();
+  document.getElementById('pDailyBox').innerHTML='<b>Dziś:</b> '+challengeBoxHTML(profile.dailyChallengeId, profile.dailyDone);
+  document.getElementById('pDailyBox').classList.toggle('done', profile.dailyDone);
+  document.getElementById('pWeeklyBox').innerHTML='<b>Ten tydzień:</b> '+challengeBoxHTML(profile.weeklyChallengeId, profile.weeklyDone);
+  document.getElementById('pWeeklyBox').classList.toggle('done', profile.weeklyDone);
+
+  const bg=document.getElementById('badgeGrid'); bg.innerHTML='';
+  BADGES.forEach(b=>{
+    const earned=!!profile.badges[b.id];
+    const el=document.createElement('div');
+    el.className='badge '+(earned?'earned':'locked');
+    el.innerHTML=(earned?'🏅 ':'🔒 ')+'<br>'+b.name;
+    el.title=b.desc;
+    bg.appendChild(el);
+  });
+
+  const sr=document.getElementById('skinRow'); sr.innerHTML='';
+  SKINS.forEach(s=>{
+    const unlocked=profile.unlockedSkins.indexOf(s.id)!==-1;
+    const el=document.createElement('div');
+    el.className='skin'+(unlocked?'':' locked')+(profile.selectedSkin===s.id?' selected':'');
+    el.style.background=s.color;
+    el.title = unlocked ? s.name : (s.name+' — odblokuj na poziomie '+s.unlockLevel);
+    el.innerHTML='<span>'+(unlocked?s.name:'Poz. '+s.unlockLevel)+'</span>';
+    if(unlocked){ el.addEventListener('click', ()=>{ profile.selectedSkin=s.id; saveProfile(); openProfile(); }); }
+    sr.appendChild(el);
+  });
+
+  const cb=document.getElementById('chronicleBox');
+  if(profile.chronicle.length===0){ cb.innerHTML='<div class="hint">Brak rozegranych gier.</div>'; }
+  else {
+    cb.innerHTML = profile.chronicle.map(c=>
+      `<div class="chroline"><span>${c.date} • ${c.shape}</span><span>${c.result} • ${c.tiles} pól • ${c.turns} tur</span></div>`
+    ).join('');
+  }
+
+  document.getElementById('profileOverlay').classList.add('show');
+}
+
+/* ================= render + animacje ================= */
+function drawTile(t, now){
+  const px_=px(t.x), py_=py(t.y);
+  const vis=isVisible(t);
+  if(!vis){
+    const scoutable = scoutMode && isScoutable(t);
+    ctx.fillStyle='#10151c'; ctx.fillRect(px_,py_,TILE,TILE);
+    ctx.fillStyle=(t.x+t.y)%2===0?'#161d24':'#12171d';
+    ctx.fillRect(px_+3,py_+3,TILE-6,TILE-6);
+    if(scoutable){ ctx.strokeStyle='#e3a640'; ctx.lineWidth=2; ctx.strokeRect(px_+2,py_+2,TILE-4,TILE-4); }
+    ctx.fillStyle='#3a4750'; ctx.font="bold 13px 'Courier New', monospace";
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('?', px_+TILE/2, py_+TILE/2+1);
+    return;
+  }
+  let alpha=1;
+  if(t.revealStart && now-t.revealStart<400) alpha=(now-t.revealStart)/400;
+  let crumbleProgress=0;
+  if(t.crumbleUntil && t.crumbleUntil>now) crumbleProgress=1-((t.crumbleUntil-now)/500);
+
+  ctx.save(); ctx.globalAlpha=alpha;
+  const terr=TERRAIN[t.terrain];
+  ctx.fillStyle=terr.base; ctx.fillRect(px_,py_,TILE,TILE);
+  ctx.fillStyle=terr.dot;
+  for(let i=0;i<5;i++){ const dx=4+((i*11)%(TILE-8)); const dy=4+(((i*7)+(t.x*3+t.y*5))%(TILE-8)); ctx.fillRect(px_+dx,py_+dy,2,2); }
+
+  if(t.flashUntil && t.flashUntil>now && t.flashColor){
+    const p=1-((t.flashUntil-now)/300);
+    ctx.fillStyle=t.flashColor; ctx.globalAlpha=alpha*(0.5*(1-p)+0.1);
+    ctx.fillRect(px_,py_,TILE,TILE); ctx.globalAlpha=alpha;
+  }
+  if(t.owner!==0){
+    const p=PLAYERS[t.owner];
+    ctx.fillStyle=p.color+'55'; ctx.fillRect(px_,py_,TILE,TILE);
+    ctx.strokeStyle=p.color; ctx.lineWidth=3; ctx.strokeRect(px_+2,py_+2,TILE-4,TILE-4);
+  } else {
+    ctx.strokeStyle='#5c6370'; ctx.lineWidth=1; ctx.strokeRect(px_+1,py_+1,TILE-2,TILE-2);
+  }
+  if(t.capital){ ctx.fillStyle='#f4e2b8'; ctx.fillRect(px_+TILE/2-3,py_+4,6,5); ctx.fillRect(px_+TILE/2-1,py_+9,2,5); }
+  if(crumbleProgress>0){
+    ctx.globalAlpha=alpha*(1-crumbleProgress); ctx.fillStyle='#000';
+    for(let i=0;i<4;i++) ctx.fillRect(px_+4+i*8, py_+TILE-6+crumbleProgress*14, 4,4);
+    ctx.globalAlpha=alpha;
+  }
+  ctx.fillStyle='#0d1116'; ctx.font="bold 12px 'Courier New', monospace";
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(String(t.units), px_+TILE/2+1, py_+TILE/2+TILE/4+1);
+  ctx.fillStyle='#f2f2ea';
+  ctx.fillText(String(t.units), px_+TILE/2, py_+TILE/2+TILE/4);
+  ctx.restore();
+
+  ctx.strokeStyle='#0009'; ctx.lineWidth=1; ctx.strokeRect(px_,py_,TILE,TILE);
+  if(selected && selected.x===t.x && selected.y===t.y){ ctx.strokeStyle='#f4e2b8'; ctx.lineWidth=3; ctx.strokeRect(px_+2,py_+2,TILE-4,TILE-4); }
+  if(selected && !scoutMode && !wallMode){
+    if(neighbors(selected.x,selected.y).some(n=>n.x===t.x&&n.y===t.y)){ ctx.fillStyle='#f4e2b822'; ctx.fillRect(px_,py_,TILE,TILE); }
+  }
+}
+function drawEdges(){
+  edges.forEach(e=>{
+    const aTile=grid[e.a.y][e.a.x], bTile=grid[e.b.y][e.b.x];
+    if(!isVisible(aTile) && !isVisible(bTile)) return;
+    const r=e.rect;
+    if(e.river){
+      ctx.fillStyle = e.bridge? '#2e6b8f':'#2a72b8'; ctx.fillRect(r.rx,r.ry,r.rw,r.rh);
+      ctx.fillStyle='#4fa0d8';
+      if(r.rw>r.rh){ for(let i=0;i<r.rw;i+=4) ctx.fillRect(r.rx+i,r.ry+2,1,r.rh-4); }
+      else { for(let i=0;i<r.rh;i+=4) ctx.fillRect(r.rx+2,r.ry+i,r.rw-4,1); }
+      if(e.bridge){
+        ctx.fillStyle='#8a5a2f';
+        if(r.rw>r.rh) ctx.fillRect(r.rx,r.ry+r.rh/2-2,r.rw,4); else ctx.fillRect(r.rx+r.rw/2-2,r.ry,4,r.rh);
+      }
+    }
+    if(e.wall && e.wall.alive){
+      ctx.fillStyle='#9a9488'; ctx.fillRect(r.rx,r.ry,r.rw,r.rh);
+      ctx.strokeStyle='#524d43'; ctx.lineWidth=1; ctx.strokeRect(r.rx+1,r.ry+1,r.rw-2,r.rh-2);
+    } else if(e.wall && !e.wall.alive){ ctx.fillStyle='#4a463f77'; ctx.fillRect(r.rx,r.ry,r.rw,r.rh); }
+  });
+}
+function drawEffects(now){
+  effects=effects.filter(e=>now-e.start<e.dur);
+  for(const e of effects){
+    const p=(now-e.start)/e.dur;
+    if(e.type==='projectile' || e.type==='march'){
+      const sx=px(e.from.x)+TILE/2, sy=py(e.from.y)+TILE/2;
+      const tx=px(e.to.x)+TILE/2, ty=py(e.to.y)+TILE/2;
+      const cx_=sx+(tx-sx)*p, cy_=sy+(ty-sy)*p;
+      ctx.fillStyle = e.type==='projectile' ? '#e3a640':'#f4e2b8';
+      ctx.fillRect(cx_-3,cy_-3,6,6);
+    } else if(e.type==='harvest'){
+      const bx=px(e.x)+TILE/2, by=py(e.y)+TILE/2;
+      for(let i=0;i<5;i++){
+        const yy=by-p*30-i*3, xx=bx+Math.sin(p*6+i)*8;
+        ctx.globalAlpha=1-p; ctx.fillStyle='#e3d16a'; ctx.fillRect(xx-2,yy-2,4,4); ctx.globalAlpha=1;
+      }
+    }
+  }
+}
+function render(now){
+  ctx.save();
+  if(shakeUntil>now){ const mag=shakeMag*((shakeUntil-now)/220); ctx.translate((Math.random()-0.5)*mag, (Math.random()-0.5)*mag); }
+  ctx.fillStyle='#0d1116'; ctx.fillRect(-10,-10,canvas.width+20,canvas.height+20);
+  if(grid){ drawEdges(); for(let y=0;y<H;y++) for(let x=0;x<W;x++) if(grid[y][x]) drawTile(grid[y][x], now); drawEffects(now); }
+  ctx.restore();
+}
+function loop(ts){ render(ts||performance.now()); requestAnimationFrame(loop); }
+requestAnimationFrame(loop);
+
+renderStartScreen();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
+
+})();
+</script>
+</body>
+</html>
