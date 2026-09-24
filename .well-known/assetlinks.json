@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "RokiStudio.ZiarnoMgla.com",
+        "sha256_cert_fingerprints": ["C2:B1:24:25:4B:EE:7E:91:F8:99:24:77:F9:4B:B4:3F:36:61:2B:2C:C5:11:AB:94:A4:3F:BA:C4:A9:62:6F:36"]
+      }
+    }]
